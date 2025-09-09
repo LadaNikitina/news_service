@@ -99,6 +99,98 @@
             border-bottom-left-radius: 6px;
         }
 
+       .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .topic-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-card:hover {
+            border-color: #4f46e5;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
+        }
+
+        .topic-card.selected {
+            border-color: #4f46e5;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .topic-emoji {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .topic-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        .topic-card.selected .topic-title {
+            color: white;
+        }
+
+        .topic-description {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .topic-card.selected .topic-description {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .topic-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .topic-card:hover {
+            border-color: #4f46e5;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
+        }
+
+        .topic-card.selected {
+            border-color: #4f46e5;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .topic-card:hover .topic-pulse {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
         .progress-container {
             margin: 24px 0;
             padding: 24px;
@@ -266,37 +358,53 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
-        .chat-input {
+        .topic-selection-area {
             padding: 24px;
             background: white;
             border-top: 1px solid #e2e8f0;
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
         }
 
-        .input-container {
-            flex: 1;
-            position: relative;
+        .selection-header {
+            text-align: center;
+            margin-bottom: 20px;
         }
 
-        .input-field {
-            width: 100%;
-            padding: 16px 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 24px;
-            font-size: 15px;
-            resize: none;
-            outline: none;
+        .selection-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .selection-subtitle {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .start-analysis-button {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
             transition: all 0.3s ease;
-            font-family: inherit;
-            line-height: 1.5;
-            max-height: 120px;
+            display: block;
+            margin: 24px auto 0;
+            opacity: 0.5;
+            pointer-events: none;
         }
 
-        .input-field:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        .start-analysis-button.enabled {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .start-analysis-button.enabled:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
         }
 
         .send-button {
@@ -376,11 +484,33 @@
             margin-left: 8px;
         }
 
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+            pointer-events: none;
+        }
+
+        .processing-overlay.active {
+            display: block;
+            pointer-events: all;
+        }
+
         @media (max-width: 768px) {
             .chatbot-container {
                 height: 100vh;
                 border-radius: 0;
                 max-width: none;
+            }
+            
+            .topics-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
             
             .progress-steps {
@@ -407,16 +537,61 @@
         <div class="chat-messages" id="chatMessages">
             <div class="message agent">
                 <strong>Welcome to AI News Assistant!</strong><br>
-                I'm your intelligent news curation AI. Simply enter any topic you're interested in, and I'll analyze it through advanced AI processes to deliver personalized news recommendations. You'll see exactly how my AI algorithms work, then receive a comprehensive Excel report with curated news for your interests.
+                I'm your intelligent news curation AI. Select one of the trending topics below, and I'll analyze it through advanced AI processes to deliver personalized news recommendations. You'll see exactly how my AI algorithms work, then receive a comprehensive Excel report with curated news for your interests.
+                
+                <div class="topics-grid">
+                    <div class="topic-card" data-topic="Artificial Intelligence" onclick="selectTopic(this)">
+                        <div class="topic-pulse"></div>
+                        <div class="topic-title">🤖 Artificial Intelligence</div>
+                        <div class="topic-description">Latest developments in AI, machine learning, and neural networks</div>
+                    </div>
+                    
+                    <div class="topic-card" data-topic="Climate Change" onclick="selectTopic(this)">
+                        <div class="topic-pulse"></div>
+                        <div class="topic-title">🌍 Climate Change</div>
+                        <div class="topic-description">Environmental news, renewable energy, and sustainability initiatives</div>
+                    </div>
+                    
+                    <div class="topic-card" data-topic="Cryptocurrency" onclick="selectTopic(this)">
+                        <div class="topic-pulse"></div>
+                        <div class="topic-title">₿ Cryptocurrency</div>
+                        <div class="topic-description">Bitcoin, blockchain technology, and digital finance trends</div>
+                    </div>
+                    
+                    <div class="topic-card" data-topic="Space Exploration" onclick="selectTopic(this)">
+                        <div class="topic-pulse"></div>
+                        <div class="topic-title">🚀 Space Exploration</div>
+                        <div class="topic-description">NASA missions, SpaceX launches, and astronomical discoveries</div>
+                    </div>
+                    
+                    <div class="topic-card" data-topic="Healthcare Innovation" onclick="selectTopic(this)">
+                        <div class="topic-pulse"></div>
+                        <div class="topic-title">🏥 Healthcare Innovation</div>
+                        <div class="topic-description">Medical breakthroughs, biotechnology, and healthcare technology</div>
+                    </div>
+                    
+                    <div class="topic-card" data-topic="Electric Vehicles" onclick="selectTopic(this)">
+                        <div class="topic-pulse"></div>
+                        <div class="topic-title">🔋 Electric Vehicles</div>
+                        <div class="topic-description">EV market trends, battery technology, and automotive innovation</div>
+                    </div>
+                    
+                    <div class="topic-card" data-topic="Cybersecurity" onclick="selectTopic(this)">
+                        <div class="topic-pulse"></div>
+                        <div class="topic-title">🔒 Cybersecurity</div>
+                        <div class="topic-description">Data protection, cyber threats, and digital security solutions</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="chat-input">
-            <div class="input-container">
-                <textarea class="input-field" id="userInput" placeholder="Enter a topic you want news about (e.g., artificial intelligence, climate change, sports...)"></textarea>
+        <div class="topic-selection-area" id="topicSelectionArea">
+            <div class="selection-header">
+                <div class="selection-title">Choose Your News Topic</div>
+                <div class="selection-subtitle">Click on any topic above to start AI analysis</div>
             </div>
-            <button class="send-button" id="sendButton" onclick="sendMessage()">
-                ➤
+            <button class="start-analysis-button" id="startAnalysisButton" onclick="startAnalysis()">
+                🚀 Start AI News Analysis
             </button>
         </div>
     </div>
@@ -452,7 +627,8 @@
         let currentStep = 0;
         let isProcessing = false;
         let currentTopic = '';
-
+        let selectedTopic = null;
+        
         async function testBackendConnection() {
             try {
                 console.log('🔍 Testing backend connection...');
@@ -461,10 +637,10 @@
                 if (response.ok) {
                     const data = await response.json();
                     console.log('✅ Backend connection successful:', data);
-                    addMessage(`
-                        <strong>✅ AI News System Ready!</strong><br>
-                        Backend connection established successfully. AI News Delivery System is operational with ${data.databases?.users || 0} users, ${data.databases?.news_tags || 0} news tags, and ${data.databases?.news_articles || 0} articles in database.
-                    `);
+                    // addMessage(`
+                    //     <strong>✅ AI News System Ready!</strong><br>
+                    //     Backend connection established successfully. AI News Delivery System is operational with ${data.databases?.users || 0} users, ${data.databases?.news_tags || 0} news tags, and ${data.databases?.news_articles || 0} articles in database.
+                    // `);
                 } else {
                     throw new Error(`Health check failed: ${response.status}`);
                 }
@@ -483,17 +659,26 @@
 
         window.addEventListener('load', testBackendConnection);
 
-        document.getElementById('userInput').addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = this.scrollHeight + 'px';
-        });
+        function selectTopic(topicElement) {
+            if (isProcessing) return;
 
-        document.getElementById('userInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
+            // Remove selection from all topics
+            document.querySelectorAll('.topic-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Select clicked topic
+            topicElement.classList.add('selected');
+            selectedTopic = topicElement.dataset.topic;
+
+            // Enable start button
+            const startButton = document.getElementById('startAnalysisButton');
+            startButton.classList.add('enabled');
+            startButton.innerHTML = `🚀 Analyze "${selectedTopic}" with AI`;
+
+            // Update selection area
+            document.querySelector('.selection-subtitle').textContent = `Selected: ${selectedTopic} - Ready to begin AI analysis`;
+        }
 
         function addMessage(content, isUser = false) {
             const messagesContainer = document.getElementById('chatMessages');
@@ -532,29 +717,25 @@
             `;
         }
 
-        async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const message = input.value.trim();
-            
-            if (!message || isProcessing) return;
+        async function startAnalysis() {
+            if (!selectedTopic || isProcessing) return;
 
             isProcessing = true;
-            currentTopic = message;
-            document.getElementById('sendButton').disabled = true;
+            currentTopic = selectedTopic;
             
-            addMessage(message, true);
-            input.value = '';
-            input.style.height = 'auto';
+            // Hide topic selection area
+            document.getElementById('topicSelectionArea').style.display = 'none';
+
+            addMessage(`<strong>📋 Topic Selected: "${selectedTopic}"</strong>`, true);
 
             addMessage(`
-                <strong>Perfect! I'll analyze "${message}" through my AI news curation workflow.</strong><br>
+                <strong>Perfect! I'll analyze "${selectedTopic}" through my AI news curation workflow.</strong><br>
                 Watch as my AI algorithms process your topic with full transparency:
                 ${createProgressContainer()}
             `);
 
-            await processSteps(message);
+            await processSteps(selectedTopic);
         }
-
         async function processSteps(topic) {
             for (let i = 0; i < steps.length; i++) {
                 await processStep(i, topic);
