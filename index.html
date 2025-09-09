@@ -75,28 +75,137 @@
             gap: 16px;
         }
 
-        .message {
+      .message {
             max-width: 80%;
             padding: 16px 20px;
             border-radius: 18px;
             font-size: 15px;
             line-height: 1.5;
-            animation: slideIn 0.3s ease-out;
+            
+            /* Основная анимация появления */
+            animation: slideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            
+            /* Плавное изменение прозрачности и трансформации */
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            animation-fill-mode: forwards;
+            
+            /* Добавляем transition для hover эффектов */
+            transition: all 0.2s ease;
         }
-
+        
         .message.user {
             align-self: flex-end;
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             color: white;
             border-bottom-right-radius: 6px;
+            
+            /* Анимация появления справа */
+            animation-name: slideInRight;
         }
-
+        
         .message.agent {
             align-self: flex-start;
             background: #f8fafc;
             color: #334155;
             border: 1px solid #e2e8f0;
             border-bottom-left-radius: 6px;
+            
+            /* Анимация появления слева */
+            animation-name: slideInLeft;
+        }
+        
+        /* Анимация появления слева (для сообщений агента) */
+        @keyframes slideInLeft {
+            0% {
+                opacity: 0;
+                transform: translateX(-30px) translateY(15px) scale(0.9);
+            }
+            50% {
+                opacity: 0.7;
+                transform: translateX(-5px) translateY(5px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) translateY(0) scale(1);
+            }
+        }
+        
+        /* Анимация появления справа (для сообщений пользователя) */
+        @keyframes slideInRight {
+            0% {
+                opacity: 0;
+                transform: translateX(30px) translateY(15px) scale(0.9);
+            }
+            50% {
+                opacity: 0.7;
+                transform: translateX(5px) translateY(5px) scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) translateY(0) scale(1);
+            }
+        }
+        
+        /* Общая анимация slideIn (запасная) */
+        @keyframes slideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Hover эффекты */
+        .message:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message.user:hover {
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+        }
+        
+        /* Анимация печатания для сообщений агента */
+        .message.agent.typing::after {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 15px;
+            background: #334155;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Анимация появления с задержкой для множественных сообщений */
+        .message:nth-child(1) { animation-delay: 0ms; }
+        .message:nth-child(2) { animation-delay: 0ms; }
+        /* .message:nth-child(3) { animation-delay: 200ms; }
+        .message:nth-child(4) { animation-delay: 300ms; }
+        .message:nth-child(5) { animation-delay: 400ms; }
+         */
+        /* Плавная прокрутка для контейнера */
+        .chat-messages {
+            scroll-behavior: smooth;
+        }
+        
+        /* Анимация фокуса */
+        .message.focused {
+            animation: pulse 0.6s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
         }
 
        .topics-grid {
@@ -685,9 +794,16 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user' : 'agent'}`;
             messageDiv.innerHTML = content;
+            
+            // Добавляем сообщение
             messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Плавная прокрутка к последнему сообщению
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 50);
         }
+
 
         function createProgressContainer() {
             return `
@@ -739,7 +855,6 @@
         async function processSteps(topic) {
             for (let i = 0; i < steps.length; i++) {
                 await processStep(i, topic);
-                await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1500));
             }
             
             await completeProcess(topic);
@@ -779,6 +894,9 @@
                 });
 
                 const result = await response.json();
+
+                await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 200));
+
                 
                 if (result.success) {
                     stepCircle.classList.remove('active');
@@ -792,8 +910,10 @@
 
                     const stepData = result.result.data;
                     const statsHtml = createStatsHTML(stepData, stepIndex);
+
                     
-                    stepDetails.innerHTML = `
+                    // Add stats message before progress container
+                    addMessage(`
                         <div class="step-title">
                             ${step.title}
                             <span class="completion-badge">COMPLETED</span>
@@ -803,7 +923,20 @@
                             ${result.result.details}
                         </div>
                         ${statsHtml}
-                    `;
+                    `);
+                    
+                    // Remove the old progress container message and add it again
+                    const chatMessages = document.getElementById('chatMessages');
+                    const progressMessage = Array.from(chatMessages.children).find(msg => 
+                        msg.innerHTML.includes('progress-container')
+                    );
+                    
+                    if (progressMessage) {
+                        const progressHtml = progressMessage.innerHTML;
+                        chatMessages.removeChild(progressMessage);
+                        addMessage(progressHtml);
+                    }
+
                 } else {
                     throw new Error(result.error || 'Step processing failed');
                 }
